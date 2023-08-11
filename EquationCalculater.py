@@ -84,10 +84,6 @@ class Calculater():
             print('Корней нет')
 
 
-
-
-
-
 '''equation = input('Введите квадратное уравнение: ')'''
 equation = 'x^2 + (3+2i)x - 5 + 3i = 0'.replace(" ",'')
 
