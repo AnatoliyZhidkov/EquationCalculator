@@ -4,26 +4,29 @@ import re
 
 class Convertor:
 
+    def normalization_equation_form(self,equation):
+        equation = equation.replace(" ",'').replace("i",'j')
+        equation = re.sub(r'[qwertyuopasdfghklzxcvbnm]','x',equation)
+        return equation
+    
     def convert_To_Comlpex(self,number):
 
-        if number =='+i' or number == 'i':
+        if number =='+j' or number == 'j':
             number = complex(0,1)
-        elif number =='-i':
+        elif number =='-j':
             number = complex(0,-1)
         else:
-            regularComplex = r'(((?<!\^)(?:\+|-)?\d+(?:\.\d+)?(?=\+|-))?((?:\+|-)\d+(?:\.\d+)?(?=i)))'
-            number = re.findall(regularComplex,number)
-            if number[0][1]=='':
-                number = complex(0,int(number[0][2]))
-            else:
-                number = complex(int(number[0][1]),int(number[0][2]))
+            if '-(' in number:      # -(5 + 2i)
+                number = -complex(number[2:len(number)-1])  
+            elif '+(' in number: number = complex(number[2:len(number)-1])
+            elif '(' in number: number = complex(number[1:len(number)-1])
+            else: number = complex(number)
+
         return number
     
     def convert_Str_To_Num(self,number):
-        if number == '' or number == '+':
-            number = 1
-        elif number == '-':
-            number = -1
+        if  number == '+':  number = 1
+        elif number == '-': number = -1
         else:
             try:
                 number = int(number)
@@ -32,20 +35,44 @@ class Convertor:
         return number
 
 
-class Coefficients(Convertor):
 
-    def calc_coeff_A(self,equation) : return self.convert_Str_To_Num(equation[:equation.find('x')])
-    def calc_coeff_B(self,equation) : return self.convert_Str_To_Num(equation[equation.find('x')+3:equation.rfind('x')])
-    def calc_coeff_C(self,equation) : return self.convert_Str_To_Num(equation[equation.rfind('x')+1:equation.find('=')])
+
+class Coefficients(Convertor):
+    
+    
+
+    def calculate_coeff(self,equation):
+        equation = self.normalization_equation_form(equation)
+
+        coeff_A = re.search(r'(?<!x\^2).+?(?=x\^2)(?!i|j)',equation)
+        if coeff_A == None: coeff_A = 1
+        else: coeff_A = self.convert_Str_To_Num(coeff_A[0])
+
+        coeff_B = re.search(r'(?<=x\^2).+?(?=x)(?!i|j)',equation)
+        if coeff_B == None: coeff_B = 0
+        else: coeff_B = self.convert_Str_To_Num(coeff_B[0])
+
+        if equation.count('x') == 2:
+            if equation[equation.rfind('x')+1:equation.find('=')] =='': coeff_C = 0
+            else: coeff_C = self.convert_Str_To_Num(equation[equation.rfind('x')+1:equation.find('=')])
+        else:
+            coeff_C = re.search(r'(?<=x\^2).+?(?==)',equation)
+            if coeff_C == None: coeff_C = 0
+            else: coeff_C = self.convert_Str_To_Num(coeff_C[0])
+        
+        coeffs = [coeff_A, coeff_B , coeff_C]
+        
+        return coeffs
+
 
 class Equation(Coefficients):
 
     def __init__(self,equation):                                                                            #   Изучить       '-> None:'
         super().__init__()
         self.equation = equation
-        self.__coeff_A = Coefficients().calc_coeff_A(equation)
-        self.__coeff_B = Coefficients().calc_coeff_B(equation)
-        self.__coeff_C = Coefficients().calc_coeff_C(equation)
+        self.__coeff_A = Coefficients().calculate_coeff(equation)[0]
+        self.__coeff_B = Coefficients().calculate_coeff(equation)[1]
+        self.__coeff_C = Coefficients().calculate_coeff(equation)[2]
     def __str__(self) -> str:
         return f"Уравнение:\n {self.equation} \n {self.__coeff_A}  {self.__coeff_B}  {self.__coeff_C}"
     @property
@@ -72,21 +99,29 @@ class Calculater():
                 x1 = (-equation_cl.coeff_B + math.sqrt(Discriminant.real))/(2*equation_cl.coeff_A)
                 x2 = (-equation_cl.coeff_B - math.sqrt(Discriminant.real))/(2*equation_cl.coeff_A)
                 print(f'Ответ: x1 = {x1}  x2 = {x2}')
+            else:
+                print('hz')
         elif Discriminant > 0:
-            x1 = (-equation_cl.coeff_B + math.sqrt(Discriminant))/(2*equation_cl.coeff_A)
-            x2 = (-equation_cl.coeff_B - math.sqrt(Discriminant))/(2*equation_cl.coeff_A)
+            Discriminant = math.sqrt(Discriminant)
+            x1 = (-equation_cl.coeff_B + Discriminant)/(2*equation_cl.coeff_A)
+            x2 = (-equation_cl.coeff_B - Discriminant)/(2*equation_cl.coeff_A)
             print(f'Ответ: x1 = {x1}  x2 = {x2}')
         elif Discriminant == 0:
             x1 = -equation_cl.coeff_B /(2*equation_cl.coeff_A)
             print(f'Ответ: x1 = {x1}')
         else:
-            print('Корней нет')
+            Discriminant = complex(0,math.sqrt(Discriminant * -1))
+            x1 = (-equation_cl.coeff_B + Discriminant)/(2*equation_cl.coeff_A)
+            x2 = (-equation_cl.coeff_B - Discriminant)/(2*equation_cl.coeff_A)
+            print(f'Ответ: x1 = {x1}  x2 = {x2}')
 
 
 '''equation = input('Введите квадратное уравнение: ')'''
-equation = 'x^2 + (3+2i)x - 5 + 3i = 0'.replace(" ",'')
+equation = 'x^2 + x = 0'.replace(" ",'')
 
 calculator = Calculater()
 ans = calculator.calculate_Quadratic_Equation(equation)
 
 
+'x^2 + (3+2i)x - 5 + 3i = 0'
+'x^2 - 6x + 34 = 0'
