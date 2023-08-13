@@ -31,7 +31,10 @@ class Convertor:
             try:
                 number = int(number)
             except ValueError:
-                number = self.convert_To_Comlpex(number)
+                try: number = self.convert_To_Comlpex(number)
+                except ValueError:
+                    print('Incorrect equation')
+                    quit()
         return number
 
 
@@ -117,7 +120,7 @@ class Calculater():
 
 
 '''equation = input('Введите квадратное уравнение: ')'''
-equation = 'x^2 + x = 0'.replace(" ",'')
+equation = 'x^2 + (3+2i)x - 5 + 3i = 0'.replace(" ",'')
 
 calculator = Calculater()
 ans = calculator.calculate_Quadratic_Equation(equation)
